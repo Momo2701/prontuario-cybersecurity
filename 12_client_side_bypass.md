@@ -1,3 +1,11 @@
+Modulo 12: Client-Side Controls & JavaScript Inspection (Client-Side Bypass)
+​Parole chiave e indizi espliciti nella traccia:
+​Riferimenti a pulsanti disabilitati (disabled), campi nascosti del modulo (<input type="hidden">), restrizioni di accesso gestite da script di validazione eseguiti direttamente nel browser.
+​Anomalie strutturali o nel codice sorgente:
+​Controlli di sicurezza o restrizioni di ruolo delegati interamente alla logica JavaScript lato client, senza alcuna validazione speculare o verifica di autorizzazione eseguita dal server.
+​Motivo logico di applicazione:
+​Si applica quando l'interfaccia grafica blocca un'azione o un inserimento tramite vincoli del browser, permettendo di bypassare la grafica e inviare direttamente i parametri desiderati al server tramite richieste HTTP personalizzate.
+
 ​3. GUIDA ALL'ADATTAMENTO (COSA MODIFICARE)
 ​In sede d'esame, procedi modificando i seguenti parametri:
 ​TARGET_URL: Inserisci l'URL dell'azione del form (attributo action del tag <form> nell'HTML).
