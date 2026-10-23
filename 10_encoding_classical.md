@@ -1,3 +1,11 @@
+​Modulo 10: Multi-Stage Encoding & Cifrari Classici
+​Parole chiave e indizi espliciti nella traccia:
+​Richieste di decodifica a catena, stringhe visibilmente offuscate attraverso formati multipli (es. passaggi successivi tra Base64, Hex e URL encoding), oppure cenni a cifrari storici (Cesare, ROT13, inversione di stringa).
+​Anomalie strutturali o nel parametro:
+​Presenza di stringhe con caratteri di padding (=), sequenze puramente esadecimali, percentuali di codifica URL o testi alfrabetici traslati a blocchi senza la presenza di una vera chiave crittografica complessa.
+​Motivo logico di applicazione:
+​Si applica quando il testo fornisce una stringa alterata unicamente da standard di rappresentazione dei dati o da traslazioni alfabetiche fisse, richiedendo l'inversione sequenziale delle funzioni di codifica per recuperare la flag in chiaro.
+
 3. GUIDA ALL'ADATTAMENTO (COSA MODIFICARE)
 ​In sede d'esame, procedi modificando i seguenti parametri:
 ​ENCODED_DATA: Inserisci la stringa cifrata o codificata fornita dal testo dell'esercizio.
