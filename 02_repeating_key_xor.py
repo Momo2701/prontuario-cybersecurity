@@ -1,61 +1,63 @@
 #!/usr/bin/env python3
 """
-PRONTUARIO #02: Repeating-Key XOR (Vigenère-XOR)
-------------------------------------------------
-Descrizione:
-Decifrazione e attacco a cifrari XOR con chiave multi-byte ripetuta ciclicamente.
-
-Uso in sede d'esame:
-1. Inserisci la stringa esadecimale cifrata in `HEX_CIPHERTEXT`.
-2. Se conosci la chiave, inseriscila in `KNOWN_KEY`.
-3. Se conosci il prefisso (es. 'flag{'), lo script estrae automaticamente i primi byte della chiave.
+PRONTUARIO #02: Repeating-Key XOR (Vigenère-XOR) Decrypter
+-----------------------------------------------------------
+Modulo: Crittografia / XOR & Cifrari Classici
+Descrizione: Estrazione automatica della chiave e decifrazione per cifrari XOR 
+            a chiave ripetuta tramite Known-Plaintext Attack (KPA) sul prefisso.
 """
 
+import itertools
+
 # ==================== INPUT DATI D'ESAME ====================
-HEX_CIPHERTEXT = "252d35243a222a26312d2426261e2c2c330b2028242b24263e"
-KNOWN_KEY = ""        # Se nota (es. "CAT" o "SECRET")
-KNOWN_PREFIX = "flag{" # Prefisso noto per il ricavo algebrico della chiave
+# Sostituire con il ciphertext esadecimale fornito dalla traccia
+HEX_CIPHERTEXT = "2529384634331c511e2425482522064a1e3406592433064c26362544393424"
+
+# Sostituire con il prefisso noto della flag (es. "flag{", "CTF{", "UNIPD{")
+KNOWN_PREFIX = "flag{"
+
+# Lunghezza stimata/nota della chiave in byte
+KEY_LENGTH = 4
 # ============================================================
 
 
-def repeating_key_xor(ciphertext_bytes: bytes, key_bytes: bytes) -> str:
-    """Decifra il testo cifrato riapplicando la chiave ciclicamente (chiave_len % i)."""
-    plaintext = []
-    key_len = len(key_bytes)
-    for i, b in enumerate(ciphertext_bytes):
-        k = key_bytes[i % key_len]
-        plaintext.append(chr(b ^ k))
-    return "".join(plaintext)
+def repeating_key_xor(data_bytes: bytes, key_bytes: bytes) -> bytes:
+    """Applica lo XOR a chiave ripetuta tra i dati forniti e la chiave."""
+    key_stream = itertools.cycle(key_bytes)
+    return bytes([b ^ k for b, k in zip(data_bytes, key_stream)])
 
 
-def derive_key_bytes(ciphertext_bytes: bytes, prefix: str) -> bytes:
-    """Ricava i byte della chiave facendo XOR tra il ciphertext e il prefisso noto."""
-    key_bytes = []
-    for i in range(len(prefix)):
-        key_bytes.append(ciphertext_bytes[i] ^ ord(prefix[i]))
-    return bytes(key_bytes)
+def derive_key_from_prefix(c_bytes: bytes, prefix: str, key_len: int) -> bytes:
+    """Ricava i byte della chiave usando i caratteri noti del prefisso."""
+    prefix_bytes = prefix.encode('utf-8')
+    key = bytearray(key_len)
+    
+    # Ricaviamo i byte della chiave fino alla lunghezza key_len
+    for i in range(min(len(prefix_bytes), key_len)):
+        key[i] = c_bytes[i] ^ prefix_bytes[i]
+        
+    return bytes(key)
 
 
 def main():
     c_bytes = bytes.fromhex(HEX_CIPHERTEXT)
-    print("[*] Esecuzione Analisi Repeating-Key XOR...\n")
+    print(f"[*] Dimensione Ciphertext: {len(c_bytes)} byte")
+    print(f"[*] Estrazione chiave per lunghezza L = {KEY_LENGTH}...")
 
-    # MODO A: Ricavo algebrico della chiave tramite prefisso noto
-    if KNOWN_PREFIX:
-        partial_key = derive_key_bytes(c_bytes, KNOWN_PREFIX)
-        print("=== 1. RICAVO ALGEBRICO DELLA CHIAVE (Known-Plaintext) ===")
-        print(f"I primi {len(KNOWN_PREFIX)} byte della chiave estratta:")
-        print(f" -> Hex  : {partial_key.hex()}")
-        print(f" -> ASCII: {partial_key.decode('utf-8', errors='replace')}")
-        print(" -> NOTA: Identifica il pattern ripetuto nella stringa ASCII per isolare la chiave reale!\n")
+    # 1. Calcolo della chiave dal prefisso noto
+    derived_key = derive_key_from_prefix(c_bytes, KNOWN_PREFIX, KEY_LENGTH)
+    key_str = "".join([chr(k) if 32 <= k <= 126 else f"\\x{k:02x}" for k in derived_key])
+    
+    print(f"[+] Chiave estratta (Hex)  : {derived_key.hex()}")
+    print(f"[+] Chiave estratta (ASCII): '{key_str}'\n")
 
-    # MODO B: Decifrazione con chiave definita
-    if KNOWN_KEY:
-        k_bytes = KNOWN_KEY.encode('utf-8')
-        plaintext = repeating_key_xor(c_bytes, k_bytes)
-        print("=== 2. DECRYPT CON CHIAVE DEFINITA ===")
-        print(f"Chiave usata: {KNOWN_KEY}")
-        print(f"Flag/Plaintext: {plaintext}")
+    # 2. Decifrazione del messaggio
+    plaintext_bytes = repeating_key_xor(c_bytes, derived_key)
+    plaintext_str = plaintext_bytes.decode('utf-8', errors='ignore')
+
+    print("=== DECODIFICA COMPLETATA ===")
+    print(f" Flag Decifrata: {plaintext_str}")
+    print("=============================")
 
 
 if __name__ == "__main__":
