@@ -21,7 +21,7 @@ HASH_TYPE = "md5"
 # Definizione del pattern di ricerca
 PREFIX = "flag{"
 SUFFIX = "}"
-CHARSET = string.digits  # Alphabeto: string.digits ('0-9'), string.ascii_lowercase, etc.
+CHARSET = string.ascii_lowercase + string.digits  # Alphabeto: string.digits ('0-9'), string.ascii_lowercase, etc.
 PATTERN_LENGTH = 4       # Numero di caratteri sconosciuti
 # ============================================================
 
