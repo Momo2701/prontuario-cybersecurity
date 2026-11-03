@@ -74,6 +74,34 @@ def decode_xor_repeating(data: bytes, key: bytes) -> bytes:
     return bytes(value ^ key[i % len(key)] for i, value in enumerate(data))
 
 
+def decode_seeded_xor(text: str, seed: int, low: int = 50, high: int = 100) -> str:
+    """Decode character-wise XOR using NumPy's legacy seeded random sequence."""
+    import numpy as np
+
+    masks = np.random.RandomState(seed).randint(low, high, size=len(text))
+    return "".join(chr(ord(char) ^ int(mask)) for char, mask in zip(text, masks))
+
+
+def bruteforce_seeded_xor(
+    text: str,
+    seeds: range,
+    known_text: str,
+    low: int = 50,
+    high: int = 100,
+) -> tuple[int, str] | None:
+    """Find a seed whose decoded text contains known_text."""
+    if not known_text:
+        raise ValueError("Il testo noto non può essere vuoto.")
+    if len(known_text) > len(text):
+        return None
+
+    for seed in seeds:
+        decoded = decode_seeded_xor(text, seed, low, high)
+        if known_text in decoded:
+            return seed, decoded
+    return None
+
+
 MORSE = {
     ".-": "A", "-...": "B", "-.-.": "C", "-..": "D", ".": "E",
     "..-.": "F", "--.": "G", "....": "H", "..": "I", ".---": "J",
@@ -121,3 +149,8 @@ if __name__ == "__main__":
     # show_bytes("Esadecimale", decode_hex(ENCODED))
     # show_bytes("Binario", decode_binary(ENCODED))
     # show_bytes("XOR", decode_xor_repeating(bytes.fromhex(ENCODED), KEY.encode("utf-8")))
+
+    # XOR con maschera pseudo-casuale e seed noto/sconosciuto (richiede NumPy).
+    # CIPHER = open("message.txt", encoding="utf-8").read()
+    # match = bruteforce_seeded_xor(CIPHER, range(3500), "spritzCTF{")
+    # print(f"Seed: {match[0]}\nTesto: {match[1]}" if match else "Seed non trovato")
