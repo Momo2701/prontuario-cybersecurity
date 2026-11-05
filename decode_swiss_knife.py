@@ -1,42 +1,78 @@
 #!/usr/bin/env python3
 """Small collection of encoders and decoders used by the CTF challenges."""
 
-import argparse
 import base64
 import hashlib
 import re
 from urllib.parse import unquote
 
 
-HASH_ALGORITHMS = (
-    "md5",
-    "sha1",
-    "sha224",
-    "sha256",
-    "sha384",
-    "sha512",
-    "sha3_224",
-    "sha3_256",
-    "sha3_384",
-    "sha3_512",
-    "blake2b",
-    "blake2s",
-)
+def _hash(text: str, algorithm: str) -> str:
+    return hashlib.new(algorithm, text.encode("utf-8")).hexdigest()
 
 
-def hash_text(text: str, algorithm: str) -> str:
-    """Return a hashlib digest as hexadecimal."""
-    try:
-        digest = hashlib.new(algorithm)
-    except ValueError as error:
-        raise ValueError(f"Algoritmo hash non supportato: {algorithm}") from error
-    digest.update(text.encode("utf-8"))
-    return digest.hexdigest()
+def md5(text: str) -> str:
+    return _hash(text, "md5")
+
+
+def sha1(text: str) -> str:
+    return _hash(text, "sha1")
+
+
+def sha224(text: str) -> str:
+    return _hash(text, "sha224")
 
 
 def sha256(text: str) -> str:
-    """Return the SHA-256 digest of text as hexadecimal."""
-    return hash_text(text, "sha256")
+    return _hash(text, "sha256")
+
+
+def sha384(text: str) -> str:
+    return _hash(text, "sha384")
+
+
+def sha512(text: str) -> str:
+    return _hash(text, "sha512")
+
+
+def sha3_224(text: str) -> str:
+    return _hash(text, "sha3_224")
+
+
+def sha3_256(text: str) -> str:
+    return _hash(text, "sha3_256")
+
+
+def sha3_384(text: str) -> str:
+    return _hash(text, "sha3_384")
+
+
+def sha3_512(text: str) -> str:
+    return _hash(text, "sha3_512")
+
+
+def blake2b(text: str) -> str:
+    return _hash(text, "blake2b")
+
+
+def blake2s(text: str) -> str:
+    return _hash(text, "blake2s")
+
+
+def identify_hash(value: str) -> list[str]:
+    """Return hash algorithms compatible with a hexadecimal digest."""
+    lengths = {
+        32: ["MD5"],
+        40: ["SHA-1"],
+        56: ["SHA-224", "SHA3-224"],
+        64: ["SHA-256", "SHA3-256", "BLAKE2s"],
+        96: ["SHA-384", "SHA3-384"],
+        128: ["SHA-512", "SHA3-512", "BLAKE2b"],
+    }
+    digest = value.strip()
+    if not re.fullmatch(r"[0-9a-fA-F]+", digest):
+        return []
+    return lengths.get(len(digest), [])
 
 
 def rot(text: str, amount: int) -> str:
@@ -57,6 +93,10 @@ def atbash(text: str) -> str:
         else char
         for char in text
     )
+
+
+def decode_url(text: str) -> str:
+    return unquote(text)
 
 
 def decode_vigenere(text: str, key: str, *, key_advances_on_symbols: bool = True) -> str:
@@ -145,20 +185,11 @@ def show_bytes(label: str, data: bytes) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("value", help="Testo o valore da elaborare")
-    parser.add_argument("operation", choices=(*HASH_ALGORITHMS, "url", "atbash", "rot"))
-    parser.add_argument("--amount", type=int, default=13, help="Rotazione per rot")
-    args = parser.parse_args()
+    value = "admin"
 
-    if args.operation in HASH_ALGORITHMS:
-        print(hash_text(args.value, args.operation))
-    elif args.operation == "url":
-        print(unquote(args.value))
-    elif args.operation == "atbash":
-        print(atbash(args.value))
-    else:
-        print(rot(args.value, args.amount))
+    # Template: cambia la funzione e gli argomenti per il challenge corrente.
+    result = sha256(value)
+    print(result)
 
 
 if __name__ == "__main__":
